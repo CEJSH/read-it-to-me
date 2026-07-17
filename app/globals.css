@@ -1,26 +1,73 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-paper: #f6f4ef;
+  --color-ink: #22201b;
+  --color-sub: #6e685c;
+  --color-blue: #2456e6;
+  --color-blue-dk: #1b41ae;
+  --color-green: #0e8a5f;
+  --color-amber: #e8842c;
+  --color-red: #d64545;
+  --color-card: #ffffff;
+  --color-line: #e4dfd4;
+  --radius-app: 28px;
+
+  --animate-pulse-grow: pulse-grow 1.3s ease-in-out infinite;
+  --animate-blink: blink 0.6s alternate infinite;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes pulse-grow {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
   }
 }
 
+@keyframes blink {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-grow {
+    animation: none;
+  }
+}
+
+*{
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family:
+    "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", system-ui,
+    sans-serif;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 4px solid var(--color-blue);
+  outline-offset: 3px;
 }

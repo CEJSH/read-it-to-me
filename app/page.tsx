@@ -1,65 +1,201 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { TopBar } from "./components/TopBar";
+import { HomeScreen } from "./components/HomeScreen";
+import { WaitScreen } from "./components/WaitScreen";
+import { ResultScreen } from "./components/ResultScreen";
+import { ErrorScreen } from "./components/ErrorScreen";
+import { SettingsScreen } from "./components/SettingsScreen";
+import { useSettings } from "@/lib/useSettings";
+import { resizeImage } from "@/lib/resizeImage";
+import { cancelSpeech, initTTS, speak, unlockTTS } from "@/lib/tts";
+import type {
+  AnalyzeResult,
+  ExplanationLevel,
+  Screen,
+  SpeechRate,
+} from "@/lib/types";
 
 export default function Home() {
+  const [screen, setScreen] = useState<Screen>("home");
+  const { settings, save } = useSettings();
+  const [result, setResult] = useState<AnalyzeResult | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [errorDetail, setErrorDetail] = useState<string | undefined>();
+  const [speaking, setSpeaking] = useState(false);
+  const [speakLabel, setSpeakLabel] = useState("말하는 중…");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    initTTS();
+  }, []);
+
+  function speakWithRate(text: string, rate: number) {
+    speak(text, {
+      rate,
+      onSpeakingChange: setSpeaking,
+      onLabelChange: setSpeakLabel,
+    });
+  }
+
+  function speakText(text: string) {
+    speakWithRate(text, settings.rate);
+  }
+
+  function openCamera() {
+    unlockTTS();
+    fileInputRef.current?.click();
+  }
+
+  function retake() {
+    cancelSpeech();
+    fileInputRef.current?.click();
+  }
+
+  async function requestAnalysis(
+    file: File,
+    level: ExplanationLevel,
+    max: number,
+    quality: number,
+  ): Promise<AnalyzeResult> {
+    const img = await resizeImage(file, max, quality);
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...img, level }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      throw new Error(data.error || `API ${res.status}`);
+    }
+    return data as AnalyzeResult;
+  }
+
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setScreen("wait");
+    speakText("읽고 있어요. 잠깐만 기다려요.");
+
+    try {
+      let data: AnalyzeResult;
+      try {
+        data = await requestAnalysis(file, settings.level, 1100, 0.72);
+      } catch {
+        // retry once with a much smaller image, same fallback as the prototype
+        data = await requestAnalysis(file, settings.level, 800, 0.6);
+      }
+      handleResult(data);
+    } catch (err) {
+      console.error(err);
+      fail(
+        "잘 안 됐어요.\n한 번 더 찍어 주세요.",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  function handleResult(d: AnalyzeResult) {
+    if (!d || d.readable === false) {
+      fail(
+        "사진이 잘 안 보여요.\n종이가 다 나오게,\n밝은 곳에서 다시 찍어 주세요.",
+      );
+      return;
+    }
+    setResult(d);
+    setScreen("result");
+    const full =
+      d.speech || [d.sender, d.message, d.action].filter(Boolean).join(" ");
+    const extra = d.important
+      ? " 이건 중요한 종이예요. 형한테 보여 주세요."
+      : "";
+    speakText(full + extra);
+  }
+
+  function fail(msg: string, detail?: string) {
+    setErrorMsg(msg);
+    setErrorDetail(detail);
+    setScreen("error");
+    speakText(msg.replace(/\n/g, " "));
+  }
+
+  function replay() {
+    if (!result) return;
+    speakText(
+      (result.speech || "") + (result.important ? " 형한테 보여 주세요." : ""),
+    );
+  }
+
+  async function share() {
+    if (!result) return;
+    const msg = `[읽어줄게] 동생이 찍은 문서예요.\n· 보낸 곳: ${result.sender}\n· 내용: ${result.message}\n· 할 일: ${result.action}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ text: msg });
+        speakText("형한테 보냈어요.");
+      } else {
+        await navigator.clipboard.writeText(msg);
+        speakText("내용을 복사했어요. 메시지에 붙여넣어 보내세요.");
+      }
+    } catch {
+      // user cancelled share / clipboard denied — silent, same as the prototype
+    }
+  }
+
+  function openSettings() {
+    cancelSpeech();
+    setScreen("settings");
+  }
+
+  function changeRate(rate: SpeechRate) {
+    save({ ...settings, rate });
+    speakWithRate("이 빠르기로 말해요.", rate);
+  }
+
+  function changeLevel(level: ExplanationLevel) {
+    save({ ...settings, level });
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="mx-auto flex min-h-dvh max-w-[520px] flex-col p-4">
+      <TopBar onOpenSettings={openSettings} />
+
+      {screen === "home" && <HomeScreen onShoot={openCamera} />}
+      {screen === "wait" && <WaitScreen />}
+      {screen === "result" && result && (
+        <ResultScreen
+          result={result}
+          speaking={speaking}
+          speakLabel={speakLabel}
+          onCardTap={speakText}
+          onReplay={replay}
+          onAgain={retake}
+          onShare={share}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      )}
+      {screen === "error" && (
+        <ErrorScreen message={errorMsg} detail={errorDetail} onRetry={retake} />
+      )}
+      {screen === "settings" && (
+        <SettingsScreen
+          settings={settings}
+          onRateChange={changeRate}
+          onLevelChange={changeLevel}
+          onClose={() => setScreen("home")}
+        />
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileChange}
+      />
     </div>
   );
 }
