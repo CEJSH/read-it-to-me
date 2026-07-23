@@ -84,7 +84,7 @@ view:{token}             # string — scan id (보호자 보기 토큰 → 스�
 
 - `/g/[token]`은 로그인 없는 capability URL이다. 링크를 아는 사람은 해당 문서 1건을 볼 수 있다. 토큰은 128bit 랜덤(URL-safe). 실사용 2명 규모에서 수용, 추후 PIN 게이트 추가 여지.
 - `/g` 목록은 정적 키(`GUARDIAN_ACCESS_KEY`) 게이트. 같은 성격의 수용.
-- 문서 사진에는 개인정보가 포함된다. Blob은 private + 서명 URL로만 서빙한다.
+- 문서 사진에는 개인정보가 포함된다. Blob은 private로 저장하고, 토큰 게이트 프록시 라우트(`/api/guardian/image/[token]`)를 거쳐서만 서빙한다.
 - SMS 발송 번호·API 키는 서버 환경변수로만 관리.
 
 ## 환경변수 (추가)
