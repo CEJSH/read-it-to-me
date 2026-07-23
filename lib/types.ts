@@ -13,6 +13,11 @@ export interface AnalyzeResult {
   action?: string;
   important?: boolean;
   speech?: string;
+  senderKey?: string;
+  /** 같은 발신자의 문서를 전에도 찍은 적 있음 (보호자 루프 활성 시) */
+  repeat?: boolean;
+  /** 보호자에게 SMS 알림이 실제 발송됨 */
+  notified?: boolean;
 }
 
 export type Screen = "home" | "wait" | "result" | "error" | "settings";

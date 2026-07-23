@@ -1,6 +1,8 @@
 import { GoogleGenAI, ThinkingLevel, Type } from "@google/genai";
 import { NextResponse } from "next/server";
 import type { ExplanationLevel } from "@/lib/types";
+import { getGuardian } from "@/lib/guardian/adapters";
+import { processScan } from "@/lib/guardian/service";
 
 const SUPPORTED_MEDIA_TYPES = [
   "image/jpeg",
@@ -28,7 +30,8 @@ sender: 누가 보낸 것인지 한 문장 (예: 병원에서 온 편지예요)
 message: 무슨 내용인지 1~2문장
 action: 지금 해야 할 일 딱 하나, 한 문장. 할 일이 없으면 '지금 안 해도 돼요.'
 important: 돈, 병원, 관공서, 날짜 약속 등 보호자가 알아야 하면 true
-speech: 위 내용을 이어서 자연스럽게 말한 전체 문장. 짧은 문장 3~5개.`;
+speech: 위 내용을 이어서 자연스럽게 말한 전체 문장. 짧은 문장 3~5개.
+senderKey: 발신 기관의 짧은 정규화된 이름 (예: '국민건강보험공단', '서울대학교병원', 'KT'). 같은 기관이면 항상 같은 값을 쓰세요. 알 수 없으면 '알수없음'.`;
 }
 
 const RESPONSE_SCHEMA = {
@@ -40,8 +43,17 @@ const RESPONSE_SCHEMA = {
     action: { type: Type.STRING },
     important: { type: Type.BOOLEAN },
     speech: { type: Type.STRING },
+    senderKey: { type: Type.STRING },
   },
-  required: ["readable", "sender", "message", "action", "important", "speech"],
+  required: [
+    "readable",
+    "sender",
+    "message",
+    "action",
+    "important",
+    "speech",
+    "senderKey",
+  ],
   propertyOrdering: [
     "readable",
     "sender",
@@ -49,6 +61,7 @@ const RESPONSE_SCHEMA = {
     "action",
     "important",
     "speech",
+    "senderKey",
   ],
 };
 
@@ -90,7 +103,30 @@ export async function POST(request: Request) {
 
     const parsed = JSON.parse(response.text ?? "{}");
 
-    return NextResponse.json(parsed);
+    // 보호자 루프: best-effort. 실패해도 분석 응답은 그대로 나간다.
+    let repeat = false;
+    let notified = false;
+    const guardian = getGuardian();
+    if (guardian && parsed.readable !== false) {
+      try {
+        const r = await processScan(guardian, {
+          senderKey: parsed.senderKey || "알수없음",
+          sender: parsed.sender ?? "",
+          message: parsed.message ?? "",
+          action: parsed.action ?? "",
+          important: parsed.important === true,
+          speech: parsed.speech ?? "",
+          imageData: Buffer.from(data, "base64"),
+          imageMediaType: media,
+        });
+        repeat = r.repeat;
+        notified = r.notified;
+      } catch (err) {
+        console.error("guardian loop failed (non-fatal)", err);
+      }
+    }
+
+    return NextResponse.json({ ...parsed, repeat, notified });
   } catch (err) {
     console.error(err);
     const msg = err instanceof Error ? err.message : "응답 오류";
