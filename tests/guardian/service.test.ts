@@ -74,3 +74,86 @@ describe("memory images / sms", () => {
     expect(sms.sent).toEqual([{ to: "01012345678", text: "hello" }]);
   });
 });
+
+import { processScan, type ScanInput } from "@/lib/guardian/service";
+import type { GuardianDeps } from "@/lib/guardian/types";
+
+function input(over: Partial<ScanInput> = {}): ScanInput {
+  return {
+    senderKey: "국민건강보험공단",
+    sender: "건강보험공단에서 온 편지예요",
+    message: "돈을 내야 해요",
+    action: "이번 주에 은행에 가요",
+    important: true,
+    speech: "건강보험공단에서 편지가 왔어요.",
+    imageData: Buffer.from("img"),
+    imageMediaType: "image/jpeg",
+    ...over,
+  };
+}
+
+function makeDeps() {
+  const store = createMemoryStore();
+  const images = createMemoryImages();
+  const sms = createMemorySms();
+  const deps: GuardianDeps = {
+    store,
+    images,
+    sms,
+    baseUrl: "https://example.test",
+  };
+  return { deps, store, images, sms };
+}
+
+describe("processScan", () => {
+  it("important + 번호 있음 → 저장·업로드·SMS·notified", async () => {
+    const { deps, store, images, sms } = makeDeps();
+    await store.setGuardianPhone("01012345678");
+    const r = await processScan(deps, input());
+    expect(r).toEqual({ repeat: false, notified: true });
+    expect(sms.sent).toHaveLength(1);
+    expect(sms.sent[0].to).toBe("01012345678");
+    expect(sms.sent[0].text).toContain("https://example.test/g/");
+    expect(images.files.size).toBe(1);
+    const saved = (await store.recentScans(1))[0];
+    expect(saved.notified).toBe(true);
+    expect(sms.sent[0].text).toContain(saved.sender);
+  });
+
+  it("번호 없으면 저장만 하고 알림 없음", async () => {
+    const { deps, sms } = makeDeps();
+    const r = await processScan(deps, input());
+    expect(r).toEqual({ repeat: false, notified: false });
+    expect(sms.sent).toHaveLength(0);
+  });
+
+  it("같은 발신자 두 번째 스캔은 repeat=true", async () => {
+    const { deps } = makeDeps();
+    await processScan(deps, input());
+    const r = await processScan(deps, input());
+    expect(r.repeat).toBe(true);
+  });
+
+  it("ignore 규칙이면 important여도 알림 억제, 기록은 남음", async () => {
+    const { deps, store, sms } = makeDeps();
+    await store.setGuardianPhone("01012345678");
+    await store.setRule("국민건강보험공단", "ignore");
+    const r = await processScan(deps, input());
+    expect(r.notified).toBe(false);
+    expect(sms.sent).toHaveLength(0);
+    expect(await store.recentScans(10)).toHaveLength(1);
+  });
+
+  it("SMS 실패해도 throw하지 않고 notified=false로 저장", async () => {
+    const { deps, store } = makeDeps();
+    await store.setGuardianPhone("01012345678");
+    deps.sms = {
+      async send() {
+        throw new Error("sms down");
+      },
+    };
+    const r = await processScan(deps, input());
+    expect(r.notified).toBe(false);
+    expect((await store.recentScans(1))[0].notified).toBe(false);
+  });
+});
