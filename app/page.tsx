@@ -109,9 +109,10 @@ export default function Home() {
     setScreen("result");
     const full =
       d.speech || [d.sender, d.message, d.action].filter(Boolean).join(" ");
-    const extra = d.important
-      ? " 이건 중요한 종이예요. 형한테 보여 주세요."
-      : "";
+    let extra = "";
+    if (d.repeat) extra += " 전에도 왔던 거예요. 지난번과 같아요.";
+    if (d.notified) extra += " 이건 중요한 종이예요. 형한테 보냈어요.";
+    else if (d.important) extra += " 이건 중요한 종이예요. 형한테 보여 주세요.";
     speakText(full + extra);
   }
 
@@ -124,9 +125,12 @@ export default function Home() {
 
   function replay() {
     if (!result) return;
-    speakText(
-      (result.speech || "") + (result.important ? " 형한테 보여 주세요." : ""),
-    );
+    const suffix = result.notified
+      ? " 형한테 보냈어요."
+      : result.important
+        ? " 형한테 보여 주세요."
+        : "";
+    speakText((result.speech || "") + suffix);
   }
 
   async function share() {

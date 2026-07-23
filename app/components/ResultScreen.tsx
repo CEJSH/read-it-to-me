@@ -39,6 +39,11 @@ export function ResultScreen({
           className={`h-3 w-3 rounded-full bg-green ${speaking ? "animate-blink" : ""}`}
         />
         <span>{speakLabel}</span>
+        {result.notified && (
+          <span className="ml-auto rounded-full bg-violet px-3 py-1 text-sm font-bold text-white">
+            형한테 보냈어요 ✓
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-3 overflow-auto">
