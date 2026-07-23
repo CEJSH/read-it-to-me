@@ -14,9 +14,11 @@ export function RuleButtons({
 }) {
   const [mode, setMode] = useState<RuleMode | null>(initialMode);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
 
   async function apply(next: RuleMode | null) {
     setBusy(true);
+    setError(false);
     try {
       const res = await fetch("/api/guardian/rule", {
         method: "POST",
@@ -24,6 +26,9 @@ export function RuleButtons({
         body: JSON.stringify({ token, mode: next ?? "none" }),
       });
       if (res.ok) setMode(next);
+      else setError(true);
+    } catch {
+      setError(true);
     } finally {
       setBusy(false);
     }
@@ -53,6 +58,11 @@ export function RuleButtons({
         {btn("ignore", "이 발신자는 무시")}
         {btn("always", "항상 알림")}
       </div>
+      {error && (
+        <p className="mt-2 text-sm font-bold text-[#C0392B]">
+          저장하지 못했어요. 한 번 더 눌러 주세요.
+        </p>
+      )}
     </div>
   );
 }
