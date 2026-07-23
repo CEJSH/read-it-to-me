@@ -35,29 +35,44 @@ export function SettingsScreen({
 }: SettingsScreenProps) {
   const [phone, setPhone] = useState("");
   const [phoneEnabled, setPhoneEnabled] = useState(false);
+  const [hasPhone, setHasPhone] = useState(false);
   const [phoneSaved, setPhoneSaved] = useState(false);
+  const [phoneError, setPhoneError] = useState(false);
 
   useEffect(() => {
     fetch("/api/guardian/phone")
       .then((r) => r.json())
-      .then((d: { enabled: boolean; phone: string | null }) => {
+      .then((d: { enabled: boolean; hasPhone: boolean }) => {
         setPhoneEnabled(d.enabled);
-        if (d.phone) setPhone(d.phone);
+        setHasPhone(d.hasPhone);
       })
       .catch(() => setPhoneEnabled(false));
   }, []);
 
-  async function savePhone() {
-    if (!phoneEnabled || !phone) return;
+  async function savePhone(): Promise<boolean> {
+    if (!phoneEnabled || !phone) return true;
+    const cleaned = phone.replace(/[^0-9]/g, "");
+    if (!/^01[016789][0-9]{7,8}$/.test(cleaned)) {
+      setPhoneError(true);
+      return false;
+    }
     try {
       const res = await fetch("/api/guardian/phone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
       });
-      setPhoneSaved(res.ok);
+      if (!res.ok) {
+        setPhoneError(true);
+        return false;
+      }
+      setPhoneSaved(true);
+      setHasPhone(true);
+      setPhoneError(false);
+      return true;
     } catch {
-      setPhoneSaved(false);
+      setPhoneError(true);
+      return false;
     }
   }
 
@@ -115,14 +130,23 @@ export function SettingsScreen({
             onChange={(e) => {
               setPhone(e.target.value);
               setPhoneSaved(false);
+              setPhoneError(false);
             }}
             placeholder="01012345678"
             className="w-full rounded-[14px] border-2 border-line bg-white px-3.5 py-3.5 text-[17px] font-bold"
           />
           <p className="mt-2 text-sm leading-[1.6] text-sub">
             중요한 문서가 오면 이 번호로 문자를 보내요.
+            {hasPhone &&
+              !phone &&
+              " 번호가 이미 등록되어 있어요. 바꾸려면 새 번호를 입력하세요."}
             {phoneSaved && " ✓ 저장했어요."}
           </p>
+          {phoneError && (
+            <p className="mt-2 text-sm font-bold text-[#C0392B]">
+              전화번호를 저장하지 못했어요. 숫자만 다시 확인해 주세요.
+            </p>
+          )}
         </div>
       )}
 
@@ -136,8 +160,8 @@ export function SettingsScreen({
 
       <button
         onClick={async () => {
-          await savePhone();
-          onClose();
+          const ok = await savePhone();
+          if (ok) onClose();
         }}
         className="rounded-[18px] bg-ink px-[18px] py-[18px] text-[19px] font-extrabold text-white"
       >

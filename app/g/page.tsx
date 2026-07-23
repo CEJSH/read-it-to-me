@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getGuardian } from "@/lib/guardian/adapters";
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function GuardianList({
   searchParams,
 }: {

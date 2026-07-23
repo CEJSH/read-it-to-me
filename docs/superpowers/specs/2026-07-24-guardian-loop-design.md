@@ -86,6 +86,7 @@ view:{token}             # string — scan id (보호자 보기 토큰 → 스�
 - `/g` 목록은 정적 키(`GUARDIAN_ACCESS_KEY`) 게이트. 같은 성격의 수용.
 - 문서 사진에는 개인정보가 포함된다. Blob은 private로 저장하고, 토큰 게이트 프록시 라우트(`/api/guardian/image/[token]`)를 거쳐서만 서빙한다.
 - SMS 발송 번호·API 키는 서버 환경변수로만 관리.
+- `/api/guardian/phone`: GET은 번호 대신 등록 여부(hasPhone)만 반환한다. POST는 무인증이다 — 배포 URL이 비공개(문자 링크로만 공유)이고 실사용 2명 규모라는 전제에서 수용. URL이 공개되면 알림 채널 탈취가 가능하므로 그때는 게이트(예: GUARDIAN_ACCESS_KEY) 추가가 필요하다.
 
 ## 환경변수 (추가)
 

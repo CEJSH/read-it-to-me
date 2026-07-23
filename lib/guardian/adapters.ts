@@ -113,6 +113,10 @@ export function getGuardian(): GuardianDeps | null {
     store: createRedisStore(),
     images: createBlobImages(),
     sms: createSolapiSms(),
-    baseUrl: process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
+    baseUrl:
+      process.env.NEXT_PUBLIC_BASE_URL ??
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000"),
   };
 }

@@ -3,9 +3,9 @@ import { getGuardian } from "@/lib/guardian/adapters";
 
 export async function GET() {
   const guardian = getGuardian();
-  if (!guardian) return NextResponse.json({ enabled: false, phone: null });
+  if (!guardian) return NextResponse.json({ enabled: false, hasPhone: false });
   const phone = await guardian.store.getGuardianPhone();
-  return NextResponse.json({ enabled: true, phone });
+  return NextResponse.json({ enabled: true, hasPhone: phone !== null });
 }
 
 export async function POST(request: Request) {

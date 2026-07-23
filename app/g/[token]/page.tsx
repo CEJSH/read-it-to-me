@@ -1,6 +1,8 @@
 import { getGuardian } from "@/lib/guardian/adapters";
 import { RuleButtons } from "../RuleButtons";
 
+export const metadata = { robots: { index: false, follow: false } };
+
 export default async function GuardianView({
   params,
 }: {

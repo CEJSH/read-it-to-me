@@ -39,6 +39,7 @@ export function RuleButtons({
     return (
       <button
         disabled={busy}
+        aria-pressed={active}
         onClick={() => apply(active ? null : target)}
         className={`flex-1 rounded-[14px] border-2 px-3.5 py-3 text-[15px] font-bold ${
           active ? "border-blue bg-blue text-white" : "border-line bg-white"
