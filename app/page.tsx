@@ -44,7 +44,6 @@ export default function Home() {
   }
 
   function openCamera() {
-    unlockTTS();
     fileInputRef.current?.click();
   }
 
@@ -77,6 +76,7 @@ export default function Home() {
     e.target.value = "";
     if (!file) return;
 
+    unlockTTS();
     setScreen("wait");
     speakText("읽고 있어요. 잠깐만 기다려요.");
 
@@ -160,7 +160,7 @@ export default function Home() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-[520px] flex-col p-4">
+    <div className="mx-auto flex min-h-dvh w-full max-w-[520px] flex-col p-4">
       <TopBar onOpenSettings={openSettings} />
 
       {screen === "home" && <HomeScreen onShoot={openCamera} />}

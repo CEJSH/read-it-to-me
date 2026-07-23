@@ -34,7 +34,7 @@ export function SettingsScreen({
     <section className="flex flex-1 flex-col gap-[18px]">
       <h2 className="mx-1 my-1.5 text-[22px]">보호자 설정</h2>
 
-      <div className="rounded-[20px] border-2 border-line bg-card p-[18px]">
+      <div className="rounded-[20px] border border-line bg-card p-[18px] shadow-soft">
         <label className="mb-2.5 block text-[17px] font-bold">
           말하는 속도
         </label>
@@ -51,7 +51,7 @@ export function SettingsScreen({
         </div>
       </div>
 
-      <div className="rounded-[20px] border-2 border-line bg-card p-[18px]">
+      <div className="rounded-[20px] border border-line bg-card p-[18px] shadow-soft">
         <label className="mb-2.5 block text-[17px] font-bold">
           설명 수준
         </label>
@@ -72,7 +72,7 @@ export function SettingsScreen({
         </p>
       </div>
 
-      <div className="rounded-[20px] border-2 border-line bg-card p-[18px]">
+      <div className="rounded-[20px] border border-line bg-card p-[18px] shadow-soft">
         <p className="text-sm leading-[1.6] text-sub">
           💡 사용법: 동생이 파란 버튼을 누르고 우편물·안내문을 찍으면, 내용을
           쉬운 말로 읽어줍니다. 중요한 문서면 &quot;형한테 보내기&quot; 버튼이

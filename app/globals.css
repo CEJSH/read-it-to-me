@@ -1,20 +1,28 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
 @import "tailwindcss";
 
 @theme {
   --color-paper: #f6f4ef;
-  --color-ink: #22201b;
+  --color-ink: #201e19;
   --color-sub: #6e685c;
   --color-blue: #2456e6;
   --color-blue-dk: #1b41ae;
   --color-green: #0e8a5f;
   --color-amber: #e8842c;
   --color-red: #d64545;
+  --color-violet: #6d54c9;
   --color-card: #ffffff;
-  --color-line: #e4dfd4;
+  --color-line: #e6e1d6;
   --radius-app: 28px;
+
+  /* Soft, layered depth — a close near-shadow plus a wide ambient one. */
+  --shadow-soft: 0 1px 2px rgba(32, 30, 25, 0.05), 0 10px 26px -10px rgba(32, 30, 25, 0.18);
+  --shadow-lift: 0 18px 42px -12px rgba(27, 65, 174, 0.42);
 
   --animate-pulse-grow: pulse-grow 1.3s ease-in-out infinite;
   --animate-blink: blink 0.6s alternate infinite;
+  --animate-float: float 4.5s ease-in-out infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes pulse-grow {
@@ -38,13 +46,37 @@
   }
 }
 
+/* Gentle breathing lift — invites the tap without shouting. */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-pulse-grow {
+  .animate-pulse-grow,
+  .animate-float,
+  .animate-rise {
     animation: none;
   }
 }
 
-*{
+* {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -55,16 +87,28 @@ body {
 }
 
 body {
-  background: var(--color-paper);
+  /* Warm paper with a soft light source up top, so the surface has depth
+     instead of reading as one flat fill. */
+  background:
+    radial-gradient(
+      1100px 620px at 50% -10%,
+      #fdfbf7 0%,
+      #f4f1ea 52%,
+      #efeadf 100%
+    );
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family:
-    "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", system-ui,
-    sans-serif;
+    "Pretendard Variable", "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR",
+    system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 button {
   border: none;
   cursor: pointer;
+  font-family: inherit;
 }
 
 button:focus-visible {

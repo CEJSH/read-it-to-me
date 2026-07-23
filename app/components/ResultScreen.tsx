@@ -34,7 +34,7 @@ export function ResultScreen({
 
   return (
     <section className="flex flex-1 flex-col gap-3.5">
-      <div className="flex items-center gap-3 rounded-[20px] border-2 border-line bg-card px-[18px] py-3.5 text-lg font-bold text-sub">
+      <div className="flex items-center gap-3 rounded-[20px] border border-line bg-card px-[18px] py-3.5 text-lg font-bold text-sub shadow-soft">
         <span
           className={`h-3 w-3 rounded-full bg-green ${speaking ? "animate-blink" : ""}`}
         />
@@ -46,8 +46,8 @@ export function ResultScreen({
           <button
             key={c.title}
             onClick={() => onCardTap(c.text)}
-            className={`flex w-full items-start gap-4 rounded-app border-2 px-5 py-[18px] text-left active:bg-[#F1EEE6] ${
-              c.todo ? "border-amber bg-[#FFF7EE]" : "border-line bg-card"
+            className={`flex w-full items-start gap-4 rounded-app border px-5 py-[18px] text-left shadow-soft transition active:scale-[0.99] active:bg-[#F1EEE6] ${
+              c.todo ? "border-amber/60 bg-[#FFF7EE]" : "border-line bg-card"
             }`}
           >
             <span className="text-[34px] leading-none">{c.icon}</span>
@@ -66,14 +66,14 @@ export function ResultScreen({
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onReplay}
-          className="flex flex-col items-center gap-2 rounded-3xl bg-green px-2.5 py-[22px] text-xl font-extrabold text-white"
+          className="flex flex-col items-center gap-2 rounded-3xl bg-green px-2.5 py-[22px] text-xl font-extrabold text-white shadow-[0_12px_26px_-10px_rgba(14,138,95,0.6)] transition active:scale-[0.98]"
         >
           <span className="text-4xl">🔊</span>
           다시 듣기
         </button>
         <button
           onClick={onAgain}
-          className="flex flex-col items-center gap-2 rounded-3xl bg-blue px-2.5 py-[22px] text-xl font-extrabold text-white"
+          className="flex flex-col items-center gap-2 rounded-3xl bg-blue px-2.5 py-[22px] text-xl font-extrabold text-white shadow-[0_12px_26px_-10px_rgba(36,86,230,0.6)] transition active:scale-[0.98]"
         >
           <span className="text-4xl">📷</span>
           새로 찍기
@@ -81,7 +81,7 @@ export function ResultScreen({
         {result.important && (
           <button
             onClick={onShare}
-            className="col-span-2 flex flex-col items-center gap-2 rounded-3xl bg-[#7A4FD0] px-2.5 py-[22px] text-xl font-extrabold text-white"
+            className="col-span-2 flex flex-col items-center gap-2 rounded-3xl bg-violet px-2.5 py-[22px] text-xl font-extrabold text-white shadow-[0_12px_26px_-10px_rgba(109,84,201,0.6)] transition active:scale-[0.98]"
           >
             <span className="text-4xl">👨‍👦</span>
             형한테 보내기
